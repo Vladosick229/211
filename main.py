@@ -233,6 +233,8 @@ class ResistorCartoon:
         self.create_cube_character()
         s = self._scale
         self.canvas.scale("all", 0, 0, s, s)
+        if hasattr(self, 'speech_text'):
+            self.canvas.itemconfig(self.speech_text, width=max(1, int(576 * s)))
         self.canvas.config(width=int(1600 * s), height=int(920 * s))
         self.hide_all()
 
