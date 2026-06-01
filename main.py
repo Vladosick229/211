@@ -182,6 +182,9 @@ JUNCTION_DOTS = [(600+DX,363+DY), (900+DX,363+DY), (1200+DX,363+DY)]
 
 ALL_WIRE_STEPS = SW + BW
 
+# --- Constants ---
+_REF_SCALE = 4/3  # scale on reference screen (2560×1440), preserves current appearance
+
 # --- Main application ---
 class ResistorCartoon:
     def __init__(self, root):
@@ -294,9 +297,13 @@ class ResistorCartoon:
 
     def load_images(self):
         try:
-            self.cube_img = tk.PhotoImage(file=CUBE_IMG_PATH)
+            pil = Image.open(CUBE_IMG_PATH).convert("RGBA")
+            self.cube_img_orig = pil
+            cs = max(1, round(502 * self._scale / _REF_SCALE))
+            self.cube_img = ImageTk.PhotoImage(pil.resize((cs, cs), Image.LANCZOS))
         except:
             self.cube_img = None
+            self.cube_img_orig = None
         self.photo_imgs = {}
         sizes = {"resistor":(130, 90), "battery":(150, 240), "voltmeter":(110, 110), "ammeter":(110, 110)}
         rotate_names = {"battery": -90}
@@ -332,16 +339,16 @@ class ResistorCartoon:
         items.append(self.canvas.create_line(*pts, fill=C_RESISTOR, width=2, tags=tag))
         items.append(self.canvas.create_text(
             (x1+x2)//2, y+h+18, text=label,
-            font=("Arial", 16, "bold"), fill=C_TEXT, anchor="n", tags=tag
+            font=("Arial", self._sf(16), "bold"), fill=C_TEXT, anchor="n", tags=tag
         ))
         if r2_mode:
             items.append(self.canvas.create_text(
-                x2+22, y, text="\u21c5", font=("Arial", 20, "bold"),
+                x2+22, y, text="\u21c5", font=("Arial", self._sf(20), "bold"),
                 fill=C_R2_ARROW, anchor="center", tags=tag
             ))
             val = self.canvas.create_text(
                 (x1+x2)//2, y-h-18, text="R2 = 200 \u03a9",
-                font=("Arial", 16, "bold"), fill=C_TEXT, anchor="s", tags=tag
+                font=("Arial", self._sf(16), "bold"), fill=C_TEXT, anchor="s", tags=tag
             )
             items.append(val)
             self.r2_label = val
@@ -355,16 +362,16 @@ class ResistorCartoon:
             fill=C_METER_BG, outline=C_METER_BORDER, width=2, tags=tag
         ))
         items.append(self.canvas.create_text(
-            cx, cy, text=kind, font=("Arial", 16, "bold"),
+            cx, cy, text=kind, font=("Arial", self._sf(16), "bold"),
             fill=C_TEXT, anchor="center", tags=tag
         ))
         items.append(self.canvas.create_text(
             cx, cy+r+14, text=label,
-            font=("Arial", 11, "bold"), fill=C_TEXT, anchor="n", tags=tag
+            font=("Arial", self._sf(11), "bold"), fill=C_TEXT, anchor="n", tags=tag
         ))
         val = self.canvas.create_text(
             cx, cy+r+32, text="",
-            font=("Consolas", 11), fill="#D32F2F", anchor="n", tags=tag
+            font=("Consolas", self._sf(11)), fill="#D32F2F", anchor="n", tags=tag
         )
         items.append(val)
         return items, val
@@ -378,16 +385,16 @@ class ResistorCartoon:
             fill="#FFF3E0", outline=C_BATTERY, width=2, tags=tag
         ))
         items.append(self.canvas.create_text(
-            x+24, y1+4, text="+", font=("Arial", 16, "bold"),
+            x+24, y1+4, text="+", font=("Arial", self._sf(16), "bold"),
             fill=C_BATTERY, anchor="w", tags=tag
         ))
         items.append(self.canvas.create_text(
-            x+24, y2-4, text="\u2212", font=("Arial", 16, "bold"),
+            x+24, y2-4, text="\u2212", font=("Arial", self._sf(16), "bold"),
             fill=C_BATTERY, anchor="w", tags=tag
         ))
         items.append(self.canvas.create_text(
             x-50, (y1+y2)//2, text=label,
-            font=("Arial", 14, "bold"), fill=C_TEXT,
+            font=("Arial", self._sf(14), "bold"), fill=C_TEXT,
             anchor="center", angle=90, tags=tag
         ))
         return items
@@ -416,7 +423,7 @@ class ResistorCartoon:
         bx, by1, by2 = E1_X, E1_Y1, E1_Y2
         p["step3"].append(self.canvas.create_text(
             bx, by1 - 30, text="E1 = 12 В",
-            font=("Arial", 16, "bold"), fill=C_BATTERY, anchor="center", tags="e1"
+            font=("Arial", self._sf(16), "bold"), fill=C_BATTERY, anchor="center", tags="e1"
         ))
         # Connection wires from circuit nodes to battery terminals
         _, ty = N_TOP_LEFT
@@ -450,7 +457,7 @@ class ResistorCartoon:
         fi.append(self.canvas.create_text(
             (PANEL_X1+PANEL_X2)//2, PANEL_Y1+25,
             text="Свойства цепи",
-            font=("Arial", 18, "bold"), fill=C_TABLE_HEADER,
+            font=("Arial", self._sf(18), "bold"), fill=C_TABLE_HEADER,
             anchor="center", tags="f_all"
         ))
         self.f_panel_bg_items = fi
@@ -461,7 +468,7 @@ class ResistorCartoon:
         self.f5_items.append(self.canvas.create_text(
             px, ty,
             text="{:20}{:>10}".format("Параметр", "Значение"),
-            font=("Consolas", 12, "bold"), fill=C_TABLE_HEADER,
+            font=("Consolas", self._sf(12), "bold"), fill=C_TABLE_HEADER,
             anchor="w", tags="f_step5"
         ))
         for i, (param, val) in enumerate([
@@ -472,7 +479,7 @@ class ResistorCartoon:
             y = ty + 28 + i*26
             self.f5_items.append(self.canvas.create_text(
                 px, y, text="{:20}{:>10}".format(param, val),
-                font=("Consolas", 12), fill=C_TEXT,
+                font=("Consolas", self._sf(12)), fill=C_TEXT,
                 anchor="w", tags="f_step5"
             ))
         self.formula_items.extend(self.f5_items)
@@ -491,7 +498,7 @@ class ResistorCartoon:
             grp = []
             y0 = PANEL_Y1 + 65
             for li, line in enumerate(lines):
-                fs = 14 if li < 2 else 11
+                fs = self._sf(14 if li < 2 else 11)
                 fw = "bold" if li < 2 else "normal"
                 fc = "#D32F2F" if li < 2 else C_TEXT
                 y = y0 + li*30 + len(self.f6_groups)*190
@@ -507,7 +514,7 @@ class ResistorCartoon:
         self.f7_header = self.canvas.create_text(
             px, PANEL_Y1+65,
             text="{:>6} {:>8} {:>8} {:>8} {:>8}".format("R2","I","U1","U2","Uобщ"),
-            font=("Consolas", 11, "bold"), fill=C_TABLE_HEADER,
+            font=("Consolas", self._sf(11), "bold"), fill=C_TABLE_HEADER,
             anchor="w", tags="f_step7"
         )
         self.formula_items.append(self.f7_header)
@@ -521,7 +528,7 @@ class ResistorCartoon:
             txt = "{:>6} {:>7}мА {:>5.1f}В {:>5.1f}В {:>5.0f}В".format(r2, i, u1, u2, utot)
             t = self.canvas.create_text(
                 px, y, text=txt,
-                font=("Consolas", 11), fill=C_TEXT,
+                font=("Consolas", self._sf(11)), fill=C_TEXT,
                 anchor="w", tags="f_step7"
             )
             self.f7_row_items.append(t)
@@ -538,8 +545,9 @@ class ResistorCartoon:
             "4.  R\u2082 / R\u2081 = U\u2082 / U\u2081",
             "    (пропорциональность)",
         ]):
-            fs = 15 if line and line[0].isdigit() else 11
-            fw = "bold" if fs == 15 else "normal"
+            is_numbered = line and line[0].isdigit()
+            fs = self._sf(15 if is_numbered else 11)
+            fw = "bold" if is_numbered else "normal"
             fc = "#D32F2F" if "=" in line else C_TEXT
             y = PANEL_Y1 + 65 + li*24
             self.f8_items.append(self.canvas.create_text(
@@ -574,7 +582,7 @@ class ResistorCartoon:
             )
             self.cube_items.append(self.cube_img_id)
             self.cube_items.append(self.canvas.create_text(
-                cx, cy, text="?", font=("Arial", 40, "bold"),
+                cx, cy, text="?", font=("Arial", self._sf(40), "bold"),
                 fill="#E65100", anchor="center", tags="cube"
             ))
 
@@ -601,7 +609,7 @@ class ResistorCartoon:
         # Speech text — bigger font
         self.speech_text = self.canvas.create_text(
             (bubble_x1+bubble_x2)//2, (bubble_y1+bubble_y2)//2,
-            text="", font=("Arial", 16), fill=C_TEXT,
+            text="", font=("Arial", self._sf(16)), fill=C_TEXT,
             anchor="center", width=int((bubble_x2 - bubble_x1) * 0.9), tags="speech"
         )
         self.speech_items.append(self.speech_text)
@@ -869,6 +877,9 @@ class ResistorCartoon:
             self.wire_in_progress = False
             self.wires_visible = len(self.wire_items)
 
+    def _sf(self, size):
+        return max(1, round(size * self._scale / _REF_SCALE))
+
     def clear_highlights(self):
         for item in self.canvas.find_withtag("hl"):
             self.canvas.delete(item)
@@ -882,7 +893,7 @@ class ResistorCartoon:
     def _hl_text(self, text, colour):
         self.canvas.create_text(
             800, 635, text=text,
-            font=("Arial", 18, "bold"), fill=colour,
+            font=("Arial", self._sf(18), "bold"), fill=colour,
             anchor="center", tags="hl"
         )
 
@@ -910,7 +921,7 @@ class ResistorCartoon:
         for i, item in enumerate(self.f7_row_items):
             fc = "#D32F2F" if i == row_idx else C_TEXT
             fw = "bold" if i == row_idx else "normal"
-            self.canvas.itemconfig(item, fill=fc, font=("Consolas", 10, fw))
+            self.canvas.itemconfig(item, fill=fc, font=("Consolas", self._sf(10), fw))
 
     def update_progress(self, idx):
         total = len(self.PHASES)
